@@ -343,6 +343,27 @@ describe('POST /auth/refresh', () => {
     expect(res.statusCode).toBe(401);
     expect(res.json().token).toBeUndefined();
   });
+
+  it('ne obnovi žetona anonimiziranega računa', async () => {
+    app.prisma.uporabnik.findUnique.mockResolvedValue({
+      id_uporabnik: 1,
+      ime: 'IZBRISANO',
+      priimek: 'IZBRISANO',
+      email: 'deleted_1_1700000000000@izbrisano.si',
+      geslo: 'IZBRISANO',
+      dostop: 2,
+    });
+    const token = app.jwt.sign({ id: 1, email: 'ana@test.si', vloga: 2 });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/auth/refresh',
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(401);
+    expect(res.json().token).toBeUndefined();
+  });
 });
 
 describe('POST /auth/google-token', () => {

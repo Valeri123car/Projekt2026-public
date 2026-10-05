@@ -3,6 +3,9 @@ import bcrypt from "bcryptjs";
 // Žeton, izdan pred več kot 30 dnevi, se ne da več obnoviti – potrebna je nova prijava.
 const REFRESH_OKNO_SEKUNDE = 30 * 24 * 60 * 60;
 
+// Vrednost, ki jo DELETE /me zapiše namesto hasha gesla; tak račun se ne more več prijaviti ali obnoviti žetona.
+const ANONIMIZIRANO_GESLO = "IZBRISANO";
+
 export default async function auth(app) {
   const adminOnly = async (request, reply) => {
     if (request.user.vloga !== 2) {
@@ -175,7 +178,7 @@ export default async function auth(app) {
           priimek: "IZBRISANO",
           email: `deleted_${id}_${Date.now()}@izbrisano.si`,
           emso_crypted: null,
-          geslo: "IZBRISANO",
+          geslo: ANONIMIZIRANO_GESLO,
           gdpr_soglasje: false,
           gdpr_datum: null,
         },
@@ -212,7 +215,7 @@ export default async function auth(app) {
           where: { id_uporabnik: decoded.id },
         });
 
-        if (!uporabnik) {
+        if (!uporabnik || uporabnik.geslo === ANONIMIZIRANO_GESLO) {
           return reply.code(401).send({ error: "Uporabnik ne obstaja" });
         }
 
